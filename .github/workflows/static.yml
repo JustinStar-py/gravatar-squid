@@ -1,0 +1,41 @@
+name: Squid Setup and Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2.4.1
+      with:
+        node-version: '20.9.0'
+
+    - name: Install global dependencies
+      run: npm install --global @subsquid/cli@latest
+
+    - name: Retrieve the template and set up environment
+      run: |
+        sqd init my_squid_name -t evm
+        cd my_squid_name
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Start a Postgres container
+      run: sqd up -d
+
+    - name: Build the squid
+      run: sqd build
+
+    - name: Start the squid processor and GraphQL server
+      run: |
+        sqd run .
+        sqd process &
+        sqd serve &
